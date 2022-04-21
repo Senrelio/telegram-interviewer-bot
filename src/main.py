@@ -65,6 +65,9 @@ def main():
     updater = create_bot_updater(cfg)
     updater.start_polling()
 
+    # execute after Ctrl+C / receiving signals
+    updater.idle()
+
 
 if __name__ == '__main__':
     main()
