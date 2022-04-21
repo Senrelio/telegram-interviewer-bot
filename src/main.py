@@ -22,6 +22,12 @@ DEFAULT_CFG = {
     'VERSION_STR': VERSION_STR
 }
 DEFAULT_CONFIG_PATH = os.path.join(os.path.dirname(__file__), '../config.yml')
+LEVELS = {
+    'debug': logging.DEBUG,
+    'info': logging.INFO,
+    'warning': logging.WARNING,
+    'error': logging.ERROR
+}
 
 
 class ColorfulLevelFilter(logging.Filter):
@@ -33,7 +39,7 @@ class ColorfulLevelFilter(logging.Filter):
     }
 
     def filter(self, record):
-        record.levelname = ColorfulLevelFilter.COLORED[record.levelname]
+        record.coloredlevelname = ColorfulLevelFilter.COLORED[record.levelname]
         return True
 
 
@@ -57,7 +63,17 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         '-c', '--config', default=DEFAULT_CONFIG_PATH,
-        help='specify a configuration file path'
+        help='the configuration file path (default: %s)' % DEFAULT_CONFIG_PATH
+    )
+    parser.add_argument(
+        '-o', '--log-path', help='the log file path'
+    )
+    parser.add_argument(
+        '-l', '--log-level', default='info',
+        help=(
+            'the logging level, which can be one of "debug", "info", '
+            '"warning" and "error" (default: "info")'
+        )
     )
     parser.add_argument(
         '-v', '--version', action='version',
@@ -67,14 +83,23 @@ def main():
 
     ft = ColorfulLevelFilter()
     console_fmt = logging.Formatter(
-        '[%(asctime)s] %(levelname)-18s (%(name)s) %(message)s'
+        '[%(asctime)s] %(coloredlevelname)-18s (%(name)s) %(message)s'
     )
     console_handler = logging.StreamHandler(stdout)
     console_handler.setFormatter(console_fmt)
     console_handler.addFilter(ft)
+    logging_handlers = [console_handler]
+    if args.log_path is not None:
+        file_fmt = logging.Formatter(
+            '[%(asctime)s] %(levelname)-7s (%(name)s) %(message)s'
+        )
+        file_handler = logging.FileHandler(args.log_path)
+        file_handler.setFormatter(file_fmt)
+        file_handler.addFilter(ft)
+        logging_handlers.append(file_handler)
     logging.basicConfig(
-        level=logging.INFO,
-        handlers=[console_handler]
+        level=LEVELS[str.lower(args.log_level)],
+        handlers=logging_handlers
     )
 
     with open(args.config, 'r', encoding='utf-8') as f:
