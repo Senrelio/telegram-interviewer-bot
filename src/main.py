@@ -27,11 +27,11 @@ def create_bot_updater(cfg: Dict[str, Any]) -> Updater:
     updater = Updater(token=cfg['bot_token'], use_context=True)
     dispatcher = updater.dispatcher
 
-    map(dispatcher.add_handler, [
+    list(map(dispatcher.add_handler, [
         CommandHandler('about', opts_wrapper(about_ep)),
         CommandHandler('help', opts_wrapper(help_ep)),
         CommandHandler('start', opts_wrapper(start_ep))
-    ])
+    ]))
 
     return updater
 
