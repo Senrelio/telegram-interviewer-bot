@@ -27,18 +27,16 @@ def create_bot_updater(cfg: Dict[str, Any]) -> Updater:
     updater = Updater(token=cfg['bot_token'], use_context=True)
     dispatcher = updater.dispatcher
 
-    about_handler = CommandHandler('about', opts_wrapper(about_ep))
-    help_handler = CommandHandler('help', opts_wrapper(help_ep))
-    start_handler = CommandHandler('start', opts_wrapper(start_ep))
-
-    dispatcher.add_handler(about_handler)
-    dispatcher.add_handler(help_handler)
-    dispatcher.add_handler(start_handler)
+    map(dispatcher.add_handler, [
+        CommandHandler('about', opts_wrapper(about_ep)),
+        CommandHandler('help', opts_wrapper(help_ep)),
+        CommandHandler('start', opts_wrapper(start_ep))
+    ])
 
     return updater
 
 
-if __name__ == '__main__':
+def main():
     logging.basicConfig(
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
         level=logging.INFO
@@ -66,3 +64,7 @@ if __name__ == '__main__':
 
     updater = create_bot_updater(cfg)
     updater.start_polling()
+
+
+if __name__ == '__main__':
+    main()
