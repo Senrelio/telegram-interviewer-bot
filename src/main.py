@@ -3,13 +3,16 @@ import logging
 import os
 from functools import partial
 from typing import Any, Dict
+from sys import stdout
 
 import yaml
-from telegram.ext import Updater, CommandHandler
+from telegram import Update
+from telegram.ext import Updater, CommandHandler, ChatMemberHandler
 
 from handlers.about import entrypoint as about_ep
 from handlers.help import entrypoint as help_ep
 from handlers.start import entrypoint as start_ep
+from handlers.interview.new_members import entrypoint as new_members_ep
 
 
 VERSION = (0, 1, 0)
@@ -21,6 +24,19 @@ DEFAULT_CFG = {
 DEFAULT_CONFIG_PATH = os.path.join(os.path.dirname(__file__), '../config.yml')
 
 
+class ColorfulLevelFilter(logging.Filter):
+    COLORED = {
+        'DEBUG': '\033[1;34mDEBUG\033[0m',      # blue
+        'INFO': '\033[1;32mINFO\033[0m',        # green
+        'WARNING': '\033[1;33mWARNING\033[0m',  # yellow
+        'ERROR': '\033[1;31mERROR\033[0m'       # red
+    }
+
+    def filter(self, record):
+        record.levelname = ColorfulLevelFilter.COLORED[record.levelname]
+        return True
+
+
 def create_bot_updater(cfg: Dict[str, Any]) -> Updater:
     opts_wrapper = lambda f: partial(f, _cfg=cfg)
 
@@ -30,18 +46,14 @@ def create_bot_updater(cfg: Dict[str, Any]) -> Updater:
     list(map(dispatcher.add_handler, [
         CommandHandler('about', opts_wrapper(about_ep)),
         CommandHandler('help', opts_wrapper(help_ep)),
-        CommandHandler('start', opts_wrapper(start_ep))
+        CommandHandler('start', opts_wrapper(start_ep)),
+        ChatMemberHandler(new_members_ep, ChatMemberHandler.CHAT_MEMBER)
     ]))
 
     return updater
 
 
 def main():
-    logging.basicConfig(
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        level=logging.INFO
-    )
-
     parser = argparse.ArgumentParser()
     parser.add_argument(
         '-c', '--config', default=DEFAULT_CONFIG_PATH,
@@ -53,17 +65,29 @@ def main():
     )
     args = parser.parse_args()
 
+    ft = ColorfulLevelFilter()
+    console_fmt = logging.Formatter(
+        '[%(asctime)s] %(levelname)-18s (%(name)s) %(message)s'
+    )
+    console_handler = logging.StreamHandler(stdout)
+    console_handler.setFormatter(console_fmt)
+    console_handler.addFilter(ft)
+    logging.basicConfig(
+        level=logging.INFO,
+        handlers=[console_handler]
+    )
+
     with open(args.config, 'r', encoding='utf-8') as f:
         cfg: Dict | None = yaml.safe_load(f)
     if cfg is None:
         cfg = DEFAULT_CFG
     else:
         cfg.update(DEFAULT_CFG)
-    logging.info('Env: config: ' + args.config)
-    logging.info('Parsed configurations: ' + repr(cfg))
+    logging.debug('Env: config: ' + args.config)
+    logging.debug('Parsed configurations: ' + repr(cfg))
 
     updater = create_bot_updater(cfg)
-    updater.start_polling()
+    updater.start_polling(allowed_updates=Update.ALL_TYPES)
 
     # execute after Ctrl+C / receiving signals
     updater.idle()
