@@ -1,6 +1,8 @@
+from functools import partial
 from typing import Any, Dict
+
 from telegram import Update
-from telegram.ext import CallbackContext
+from telegram.ext import CallbackContext, CommandHandler
 
 
 TEXT = '''Telegram Interviewer Bot - v{ver}
@@ -22,3 +24,9 @@ def entrypoint(
         chat_id=update.effective_chat.id, parse_mode='HTML',
         text=TEXT.format(ver=_cfg['VERSION_STR'])
     )
+
+
+start_handler = lambda cfg: CommandHandler(
+    'start',
+    partial(entrypoint, _cfg=cfg)
+)

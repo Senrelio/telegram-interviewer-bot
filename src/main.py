@@ -1,7 +1,6 @@
 import argparse
 import logging
 import os
-from functools import partial
 from typing import Any, Dict
 from sys import stdout
 
@@ -9,10 +8,10 @@ import yaml
 from telegram import Update
 from telegram.ext import Updater, CommandHandler, ChatMemberHandler
 
-from handlers.about import entrypoint as about_ep
-from handlers.help import entrypoint as help_ep
-from handlers.start import entrypoint as start_ep
-from handlers.interview.new_members import entrypoint as new_members_ep
+from handlers.about import about_handler
+from handlers.help import help_handler
+from handlers.start import start_handler
+from handlers.interview.new_members import new_members_handler
 
 
 VERSION = (0, 1, 0)
@@ -44,16 +43,14 @@ class ColorfulLevelFilter(logging.Filter):
 
 
 def create_bot_updater(cfg: Dict[str, Any]) -> Updater:
-    opts_wrapper = lambda f: partial(f, _cfg=cfg)
-
     updater = Updater(token=cfg['bot_token'], use_context=True)
     dispatcher = updater.dispatcher
 
     list(map(dispatcher.add_handler, [
-        CommandHandler('about', opts_wrapper(about_ep)),
-        CommandHandler('help', opts_wrapper(help_ep)),
-        CommandHandler('start', opts_wrapper(start_ep)),
-        ChatMemberHandler(new_members_ep, ChatMemberHandler.CHAT_MEMBER)
+        about_handler(cfg),
+        help_handler(cfg),
+        start_handler(cfg),
+        new_members_handler(cfg)
     ]))
 
     return updater

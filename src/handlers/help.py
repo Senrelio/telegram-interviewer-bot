@@ -1,6 +1,8 @@
+from functools import partial
 from typing import Any, Dict
+
 from telegram import Update
-from telegram.ext import CallbackContext
+from telegram.ext import CallbackContext, CommandHandler
 
 
 TEXT = (
@@ -22,3 +24,8 @@ def entrypoint(
         disable_web_page_preview=True,
         text=TEXT.format(ver=_cfg['VERSION_STR'])
     )
+
+help_handler = lambda cfg: CommandHandler(
+    'help',
+    partial(entrypoint, _cfg=cfg)
+)
