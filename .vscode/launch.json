@@ -18,7 +18,9 @@
             "request": "launch",
             "args": [
                 "-c",
-                "secrets.yml"
+                "secrets.yml",
+                "-l",
+                "debug"
             ],
             "program": "${workspaceFolder}/src/main.py",
             "console": "integratedTerminal",
